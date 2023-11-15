@@ -1,9 +1,4 @@
 module.exports = {
-  trailingComma: 'all',
-  tabWidth: 2,
-  semi: true,
+  plugins: ['@ianvs/prettier-plugin-sort-imports'],
   singleQuote: true,
-  jsxBracketSameLine: false,
-  bracketSpacing: true,
-  printWidth: 100,
 };

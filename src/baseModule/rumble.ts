@@ -1,6 +1,5 @@
-import { isArray, mapValues } from 'lodash/fp';
-
-import { RawGamepad, Effect, StrictEffect } from '../index';
+import { mapValues } from '../common/utils';
+import { Effect, RawGamepad, StrictEffect } from '../types';
 
 type GamepadId = string;
 type ChannelName = string;
@@ -52,7 +51,7 @@ export function addRumble(
     allChannels[padId] = {};
   }
 
-  allChannels[padId][channelName] = isArray(effect)
+  allChannels[padId][channelName] = Array.isArray(effect)
     ? effect.map(makeEffectStrict)
     : [makeEffectStrict(effect)];
 }
@@ -62,21 +61,27 @@ export function getCurrentEffect(padId: string): StrictEffect {
     allChannels[padId] = {};
   }
 
-  const strongMagnitude = Object.values(allChannels[padId]).reduce((sum, channel) => {
-    const curr = channel[0];
-    if (!!curr && typeof curr !== 'number') {
-      return sum + (curr.strongMagnitude || 0);
-    }
-    return sum;
-  }, 0);
+  const strongMagnitude = Object.values(allChannels[padId]).reduce(
+    (sum, channel) => {
+      const curr = channel[0];
+      if (!!curr && typeof curr !== 'number') {
+        return sum + (curr.strongMagnitude || 0);
+      }
+      return sum;
+    },
+    0,
+  );
 
-  const weakMagnitude = Object.values(allChannels[padId]).reduce((sum, channel) => {
-    const curr = channel[0];
-    if (!!curr && typeof curr !== 'number') {
-      return sum + (curr.weakMagnitude || 0);
-    }
-    return sum;
-  }, 0);
+  const weakMagnitude = Object.values(allChannels[padId]).reduce(
+    (sum, channel) => {
+      const curr = channel[0];
+      if (!!curr && typeof curr !== 'number') {
+        return sum + (curr.weakMagnitude || 0);
+      }
+      return sum;
+    },
+    0,
+  );
 
   return {
     strongMagnitude: Math.min(1, Math.max(0, strongMagnitude)),
@@ -102,8 +107,6 @@ export function updateChannels(padId: string, timeElapsed: number) {
 
         return channelValue;
       })
-      .filter((channelValue) => {
-        return channelValue.duration > 0;
-      });
+      .filter((channelValue) => channelValue.duration > 0);
   }, allChannels[padId]);
 }

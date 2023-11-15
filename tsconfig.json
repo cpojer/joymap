@@ -1,37 +1,32 @@
 {
-  "link": "https://www.typescriptlang.org/docs/handbook/compiler-options.html",
-  "include": ["./src", "./types", "./examples"],
-  "exclude": ["./node_modules", "./docs", "./bin"],
   "compilerOptions": {
-    "target": "esnext",
-    "module": "commonjs",
-    "importHelpers": true,
-    "sourceMap": true,
-    "allowSyntheticDefaultImports": true,
-    "rootDir": "./",
-    "noEmit": true,
-    "outDir": "",
-    "lib": ["esnext", "dom"],
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictPropertyInitialization": true,
-    "noErrorTruncation": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
     "allowJs": true,
-    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "checkJs": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noEmit": true,
+    "noImplicitOverride": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "baseUrl": "./",
-    "paths": {
-      "*": ["./node_modules/*"]
-    },
-    "typeRoots": ["./types/", "./node_modules/@types"],
-    "jsx": "react",
-    "esModuleInterop": true
-  }
+    "plugins": [
+      {
+        "lint": {
+          "unknownProperties": "error"
+        }
+      }
+    ],
+    "resolveJsonModule": true,
+    "resolvePackageJsonExports": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es2017"
+  },
+  "exclude": ["dist/", "node_modules", "scripts/fixtures/"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
 }

@@ -1,15 +1,11 @@
 import memoize from 'fast-memoize';
-import { assignIn, mapValues, omit, forEach } from 'lodash/fp';
-
-import { buttonMap, stickMap } from '../common/utils';
 import createBaseModule from '../baseModule/base';
-import { StickResult, ButtonResult } from '../index';
+import { buttonMap, mapValues, stickMap } from '../common/utils';
+import { ButtonResult, StickResult } from '../types';
 
-// the following definition allows for the circular Mapper type
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface QueryModule extends ReturnType<typeof createQueryModule> {}
 
-export type MapperResult = any;
+export type MapperResult = Record<string, unknown> | null;
 
 export type Mapper = (module: QueryModule) => MapperResult;
 
@@ -38,7 +34,7 @@ export default function createQueryModule(params = {}) {
   const buttonMapMemoized = memoize(buttonMap);
   const stickMapMemoized = memoize(stickMap);
 
-  const module = assignIn(baseModule, {
+  const module = Object.assign(baseModule, {
     getButton: (inputName: string) => {
       if (!module.isConnected()) {
         return emptyButton;
@@ -56,15 +52,15 @@ export default function createQueryModule(params = {}) {
     getButtons: (...inputNames: string[]) => {
       if (!module.isConnected()) {
         const result: Record<string, ButtonResult> = {};
-        forEach((mapperName) => {
+        inputNames.forEach((mapperName) => {
           result[mapperName] = emptyButton;
-        }, inputNames);
+        });
 
         return result;
       }
 
       const result: Record<string, ButtonResult> = {};
-      forEach((inputName) => {
+      inputNames.forEach((inputName) => {
         result[inputName] = buttonMapMemoized(
           state.pad,
           state.prevPad,
@@ -72,14 +68,14 @@ export default function createQueryModule(params = {}) {
           state.threshold,
           state.clampThreshold,
         );
-      }, inputNames);
+      });
 
       return result;
     },
 
     getAllButtons: (): Record<string, ButtonResult> => {
       if (!module.isConnected()) {
-        return mapValues(state.buttons, () => emptyButton);
+        return mapValues(() => emptyButton, state.buttons);
       }
 
       return mapValues(
@@ -114,15 +110,15 @@ export default function createQueryModule(params = {}) {
     getSticks: (...inputNames: string[]) => {
       if (!module.isConnected()) {
         const result: Record<string, StickResult> = {};
-        forEach((mapperName) => {
+        inputNames.forEach((mapperName) => {
           result[mapperName] = emptyStick;
-        }, inputNames);
+        });
 
         return result;
       }
 
       const result: Record<string, StickResult> = {};
-      forEach((inputName) => {
+      inputNames.forEach((inputName) => {
         const { indexes, inverts } = state.sticks[inputName];
         result[inputName] = stickMapMemoized(
           state.pad,
@@ -132,14 +128,14 @@ export default function createQueryModule(params = {}) {
           state.threshold,
           state.clampThreshold,
         );
-      }, inputNames);
+      });
 
       return result;
     },
 
     getAllSticks: (): Record<string, StickResult> => {
       if (!module.isConnected()) {
-        return mapValues(state.sticks, () => emptyStick);
+        return mapValues(() => emptyStick, state.sticks);
       }
 
       return mapValues((stick) => {
@@ -167,17 +163,17 @@ export default function createQueryModule(params = {}) {
     getMappers: (...mapperNames: string[]) => {
       if (!module.isConnected()) {
         const result: Record<string, MapperResult> = {};
-        forEach((mapperName) => {
+        mapperNames.forEach((mapperName) => {
           result[mapperName] = emptyMapper;
-        }, mapperNames);
+        });
 
         return result;
       }
 
-      const result: Record<string, Mapper> = {};
-      forEach((mapperName) => {
+      const result: Record<string, MapperResult> = {};
+      mapperNames.forEach((mapperName) => {
         result[mapperName] = mappers[mapperName](module);
-      }, mapperNames);
+      });
 
       return result;
     },
@@ -195,7 +191,7 @@ export default function createQueryModule(params = {}) {
     },
 
     removeMapper: (mapperName: string) => {
-      mappers = omit([mapperName], mappers);
+      delete mappers[mapperName];
     },
 
     clearMappers: () => {

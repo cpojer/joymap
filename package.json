@@ -1,17 +1,17 @@
 {
   "name": "joymap",
-  "version": "2.2.4",
+  "version": "3.0.0",
   "description": "A Gamepad API wrapper and mapping tool.",
-  "main": "./bin/src/index.js",
-  "types": "./bin/src/index.d.ts",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "files": [
-    "bin",
-    "src"
+    "lib"
   ],
   "scripts": {
-    "build": "mkdir -p lib && rm -rf lib/*; esbuild --target=es2017 --format=esm --outfile=lib/index.js --bundle ./src/index.ts",
+    "build": "mkdir -p lib && rm -rf lib/*; dts-bundle-generator -o lib/index.d.ts src/index.ts && prettier --ignore-path '' --write lib/index.d.ts && esbuild --target=es2017 --format=esm --outfile=lib/index.js --bundle ./src/index.ts",
     "format": "prettier \"**/*.{js,jsx,json,tsx,ts}\" --write",
-    "lint": "eslint --ignore-path .prettierignore \"**/*.{js,jsx,ts,tsx}\""
+    "lint": "eslint --ignore-path .prettierignore \"**/*.{js,jsx,ts,tsx}\"",
+    "test": "tsc && pnpm lint"
   },
   "author": {
     "name": "Diego Doumecq",
@@ -32,14 +32,14 @@
   },
   "license": "MIT",
   "dependencies": {
-    "fast-memoize": "^2.5.2",
-    "lodash": "^4.17.21"
+    "fast-memoize": "^2.5.2"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.201",
+    "@ianvs/prettier-plugin-sort-imports": "^4.1.1",
     "@types/node": "^20.9.0",
     "@typescript-eslint/eslint-plugin": "^6.11.0",
     "@typescript-eslint/parser": "^6.11.0",
+    "dts-bundle-generator": "^8.1.2",
     "esbuild": "^0.19.5",
     "eslint": "^8.53.0",
     "prettier": "^3.1.0",

@@ -1,5 +1,4 @@
-import { forEach, reduce, map } from 'lodash/fp';
-import { CustomGamepad, RawGamepad, ButtonResult, StickResult } from '../index';
+import { ButtonResult, CustomGamepad, RawGamepad, StickResult } from '../types';
 
 // dev-helper type: expands object types one level deep
 export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
@@ -29,7 +28,10 @@ export function isConsecutive(target: number[]) {
   return true;
 }
 
-export function findIndexes(iterator: (a: number) => boolean, target: number[]) {
+export function findIndexes(
+  iterator: (a: number) => boolean,
+  target: number[],
+) {
   const { length } = target;
   const result = [];
   let i = 0;
@@ -71,7 +73,10 @@ export function isButtonSignificant(value = 0, threshold: number) {
 }
 
 export function isStickSignificant(stickValue: number[], threshold: number) {
-  const squaredMagnitude = reduce((result, value) => result + value ** 2, 0, stickValue);
+  const squaredMagnitude = stickValue.reduce(
+    (result, value) => result + value ** 2,
+    0,
+  );
   return threshold * threshold < squaredMagnitude;
 }
 
@@ -112,20 +117,26 @@ export function buttonMap(
   };
 }
 
-export function roundSticks(indexMaps: number[][], axes: number[], threshold: number) {
+export function roundSticks(
+  indexMaps: number[][],
+  axes: number[],
+  threshold: number,
+) {
   let stickNumber = 0;
   let axesSums: number[] = [];
 
-  forEach((indexes) => {
-    const values = map((i) => axes[i], indexes);
+  indexMaps.forEach((indexes) => {
+    const values = indexes.map((i) => axes[i]);
 
     if (isStickSignificant(values, threshold)) {
       axesSums = values.map((v, i) => v + (axesSums[i] || 0));
       stickNumber += 1;
     }
-  }, indexMaps);
+  });
 
-  return stickNumber === 0 ? map(() => 0, indexMaps[0]) : map((v) => v / stickNumber, axesSums);
+  return stickNumber === 0
+    ? indexMaps[0].map(() => 0)
+    : axesSums.map((v) => v / stickNumber);
 }
 
 export function stickMap(
@@ -145,12 +156,24 @@ export function stickMap(
 
   return {
     type: 'stick',
-    value:
+    value: value.map(
       !clampThreshold || pressed
-        ? value.map((v, i) => (!inverts[i] ? v : v * -1))
-        : map(() => 0, value),
+        ? (v, i) => (!inverts[i] ? v : v * -1)
+        : () => 0,
+    ),
     pressed,
     justChanged: pressed !== prevPressed,
     inverts,
   };
+}
+
+export function mapValues<T, S>(
+  fn: (value: T, key: string) => S,
+  object: Record<string, T>,
+) {
+  const result: Record<string, S> = {};
+  for (const key of Object.keys(object)) {
+    result[key] = fn(object[key], key);
+  }
+  return result;
 }

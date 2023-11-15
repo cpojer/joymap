@@ -1,7 +1,9 @@
-import { assignIn } from 'lodash/fp';
-
-import { isButtonSignificant, findIndexes, isConsecutive } from '../common/utils';
-import { CustomGamepad, ListenOptions, Button, Stick } from '../index';
+import {
+  findIndexes,
+  isButtonSignificant,
+  isConsecutive,
+} from '../common/utils';
+import { Button, CustomGamepad, ListenOptions, Stick } from '../types';
 
 export const mockGamepad: CustomGamepad = {
   axes: [],
@@ -28,7 +30,10 @@ export function updateListenOptions(
   const indexes =
     type === 'axes'
       ? findIndexes((value) => Math.abs(value) > threshold, pad.axes)
-      : findIndexes((value) => isButtonSignificant(value, threshold), pad.buttons);
+      : findIndexes(
+          (value) => isButtonSignificant(value, threshold),
+          pad.buttons,
+        );
 
   if (
     indexes.length === quantity &&
@@ -36,10 +41,13 @@ export function updateListenOptions(
     (allowOffset || indexes[0] % quantity === 0)
   ) {
     if (useTimeStamp && currentValue === 0) {
-      return assignIn(listenOptions, { currentValue: Date.now() });
+      listenOptions.currentValue = Date.now();
+      return listenOptions;
     }
 
-    const comparison = useTimeStamp ? Date.now() - currentValue : currentValue + 1;
+    const comparison = useTimeStamp
+      ? Date.now() - currentValue
+      : currentValue + 1;
 
     if (targetValue <= comparison) {
       if (type === 'axes') {
@@ -51,13 +59,14 @@ export function updateListenOptions(
     }
 
     if (!useTimeStamp) {
-      return assignIn(listenOptions, { currentValue: comparison });
+      listenOptions.currentValue = comparison;
     }
 
     return listenOptions;
   }
 
-  return assignIn(listenOptions, { currentValue: 0 });
+  listenOptions.currentValue = 0;
+  return listenOptions;
 }
 
 export function getDefaultButtons(): Record<string, Button> {

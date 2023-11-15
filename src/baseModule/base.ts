@@ -1,36 +1,28 @@
-import {
-  findKey,
-  isEqual,
-  map,
-  assignIn,
-  forEach,
-  flow,
-  flatten,
-  uniq,
-  uniqBy,
-  toString,
-} from 'lodash/fp';
-
 import { nameIsValid } from '../common/utils';
-import { mockGamepad, getDefaultButtons, getDefaultSticks, updateListenOptions } from './baseUtils';
 import {
-  stopRumble,
+  BaseParams,
+  Button,
+  CustomGamepad,
+  Effect,
+  ListenOptions,
+  RawGamepad,
+  Stick,
+  StrictEffect,
+} from '../types';
+import {
+  getDefaultButtons,
+  getDefaultSticks,
+  mockGamepad,
+  updateListenOptions,
+} from './baseUtils';
+import {
   addRumble,
   applyRumble,
   getCurrentEffect,
-  updateChannels,
   MAX_DURATION,
+  stopRumble,
+  updateChannels,
 } from './rumble';
-import {
-  ListenOptions,
-  RawGamepad,
-  Effect,
-  BaseParams,
-  CustomGamepad,
-  StrictEffect,
-  Button,
-  Stick,
-} from '../index';
 
 export type BaseModule = ReturnType<typeof createModule>;
 
@@ -46,6 +38,18 @@ interface BaseState {
   buttons: Record<string, Button>;
   sticks: Record<string, Stick>;
 }
+
+const findKey = <T>(
+  fn: (item: T) => boolean,
+  object: Record<string, T>,
+): string | null => {
+  for (const key of Object.keys(object)) {
+    if (fn(object[key])) {
+      return key;
+    }
+  }
+  return null;
+};
 
 export default function createModule(params: BaseParams = {}) {
   let listenOptions: ListenOptions | null = null;
@@ -85,54 +89,49 @@ export default function createModule(params: BaseParams = {}) {
       }
     },
 
-    getConfig: () =>
-      JSON.stringify({
-        threshold: state.threshold,
-        clampThreshold: state.clampThreshold,
-        buttons: state.buttons,
-        sticks: state.sticks,
-      }),
-
-    setConfig: (serializedString: string) => assignIn(state, JSON.parse(serializedString)),
-
-    getButtonIndexes: (...inputNames: string[]) =>
-      flow(
-        map((inputName: string) => state.buttons[inputName]),
-        flatten,
-        uniq,
-      )(inputNames),
-
-    getStickIndexes: (...inputNames: string[]) =>
-      flow(
-        map((inputName: string) => state.sticks[inputName].indexes),
-        flatten,
-        uniqBy(toString),
-      )(inputNames),
+    getButtonIndexes: (...inputNames: string[]) => [
+      ...new Set(
+        inputNames.flatMap((inputName: string) => state.buttons[inputName]),
+      ),
+    ],
+    getStickIndexes: (...inputNames: string[]) => [
+      ...new Set(
+        inputNames
+          .flatMap((inputName: string) => state.sticks[inputName].indexes)
+          .map(String),
+      ),
+    ],
 
     setButton: (inputName: string, indexes: number[]) => {
       if (!nameIsValid(inputName)) {
-        throw new Error(`On setButton('${inputName}'): argument contains invalid characters`);
+        throw new Error(
+          `On setButton('${inputName}'): argument contains invalid characters`,
+        );
       }
       state.buttons[inputName] = indexes;
     },
 
     setStick: (inputName: string, indexes: number[][], inverts?: boolean[]) => {
       if (!nameIsValid(inputName)) {
-        throw new Error(`On setStick('${inputName}'): inputName contains invalid characters`);
+        throw new Error(
+          `On setStick('${inputName}'): inputName contains invalid characters`,
+        );
       }
 
       if (indexes.length === 0) {
-        throw new Error(`On setStick('${inputName}', indexes): argument indexes is an empty array`);
+        throw new Error(
+          `On setStick('${inputName}', indexes): argument indexes is an empty array`,
+        );
       }
 
       state.sticks[inputName] = {
         indexes,
-        inverts: inverts || map(() => false, indexes[0]),
+        inverts: inverts || indexes[0].map(() => false),
       };
     },
 
     invertSticks: (inverts: boolean[], ...inputNames: string[]) => {
-      forEach((inputName) => {
+      inputNames.forEach((inputName) => {
         const stick = state.sticks[inputName];
         if (stick.inverts.length === inverts.length) {
           stick.inverts = inverts;
@@ -141,7 +140,7 @@ export default function createModule(params: BaseParams = {}) {
             `On invertSticks(inverts, [..., ${inputName}, ...]): given argument inverts' length does not match '${inputName}' axis' length`,
           );
         }
-      }, inputNames);
+      });
     },
 
     swapButtons: (btn1: string, btn2: string) => {
@@ -165,12 +164,16 @@ export default function createModule(params: BaseParams = {}) {
       state.prevPad = state.pad;
       state.pad = {
         axes: gamepad.axes as number[],
-        buttons: map((a) => a.value, gamepad.buttons),
+        buttons: gamepad.buttons.map((a) => a.value),
         rawPad: gamepad,
       };
 
       if (listenOptions) {
-        listenOptions = updateListenOptions(listenOptions, state.pad, state.threshold);
+        listenOptions = updateListenOptions(
+          listenOptions,
+          state.pad,
+          state.threshold,
+        );
       }
 
       // Update rumble state
@@ -205,7 +208,11 @@ export default function createModule(params: BaseParams = {}) {
         waitFor = [1, 'polls'],
         consecutive = false,
         allowOffset = true,
-      }: { waitFor?: [number, 'polls' | 'ms']; consecutive?: boolean; allowOffset?: boolean } = {},
+      }: {
+        waitFor?: [number, 'polls' | 'ms'];
+        consecutive?: boolean;
+        allowOffset?: boolean;
+      } = {},
     ) => {
       listenOptions = {
         callback: callback as (indexes: number[] | number[][]) => void,
@@ -226,7 +233,11 @@ export default function createModule(params: BaseParams = {}) {
         waitFor = [100, 'ms'],
         consecutive = true,
         allowOffset = true,
-      }: { waitFor?: [number, 'polls' | 'ms']; consecutive?: boolean; allowOffset?: boolean } = {},
+      }: {
+        waitFor?: [number, 'polls' | 'ms'];
+        consecutive?: boolean;
+        allowOffset?: boolean;
+      } = {},
     ) => {
       listenOptions = {
         callback: callback as (indexes: number[] | number[][]) => void,
@@ -252,7 +263,10 @@ export default function createModule(params: BaseParams = {}) {
       }
 
       module.listenButton((indexes: number[]) => {
-        const resultName = findKey((value) => value[0] === indexes[0], state.buttons);
+        const resultName = findKey(
+          (value) => value[0] === indexes[0],
+          state.buttons,
+        );
 
         if (!allowDuplication && resultName && state.buttons[inputName]) {
           module.swapButtons(inputName, resultName);
@@ -260,7 +274,9 @@ export default function createModule(params: BaseParams = {}) {
           module.setButton(inputName, indexes);
         }
 
-        callback(resultName);
+        if (resultName) {
+          callback(resultName);
+        }
       });
     },
 
@@ -276,7 +292,24 @@ export default function createModule(params: BaseParams = {}) {
       }
 
       module.listenAxis((indexesResult: number[][]) => {
-        const resultName = findKey(({ indexes }) => isEqual(indexes, indexesResult), state.sticks);
+        const resultName = findKey(({ indexes }) => {
+          if (indexes.length !== indexesResult.length) {
+            return false;
+          }
+
+          for (let i = 0; i < indexes.length; i++) {
+            if (indexes[i].length !== indexesResult[i].length) {
+              return false;
+            }
+
+            for (let axis = 0; axis < indexes[i].length; axis++) {
+              if (indexes[i][axis] !== indexesResult[i][axis]) {
+                return false;
+              }
+            }
+          }
+          return true;
+        }, state.sticks);
 
         if (!allowDuplication && resultName && state.sticks[inputName]) {
           module.swapSticks(inputName, resultName);
@@ -284,14 +317,19 @@ export default function createModule(params: BaseParams = {}) {
           module.setStick(inputName, indexesResult);
         }
 
-        callback(resultName);
+        if (resultName) {
+          callback(resultName);
+        }
       });
     },
 
     isRumbleSupported: (rawPad?: RawGamepad) => {
       const padToTest = rawPad || state.pad.rawPad;
       if (padToTest) {
-        return !!padToTest.vibrationActuator && !!padToTest.vibrationActuator.playEffect;
+        return (
+          !!padToTest.vibrationActuator &&
+          !!padToTest.vibrationActuator.playEffect
+        );
       } else {
         return null;
       }
