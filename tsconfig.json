@@ -32,15 +32,6 @@
     },
     "typeRoots": ["./types/", "./node_modules/@types"],
     "jsx": "react",
-    "esModuleInterop": true,
-    "types": ["webpack-env"],
-    "plugins": [
-      {
-        "name": "typescript-styled-plugin",
-        "lint": {
-          "validProperties": []
-        }
-      }
-    ]
+    "esModuleInterop": true
   }
 }

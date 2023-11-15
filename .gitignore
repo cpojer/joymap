@@ -3,3 +3,4 @@ devBundle
 node_modules
 .module-cache
 *.log*
+lib
