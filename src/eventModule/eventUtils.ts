@@ -2,7 +2,7 @@ import { split, reduce, filter, flow, map, isString } from 'lodash/fp';
 
 import { nameIsValid } from '../common/utils';
 import shuntingYard, { operators } from './shuntingYard';
-import { EventToken } from '../types';
+import { EventToken } from '../index';
 
 /**
  * Returns EventToken[] in reverse polish notation (RPN)

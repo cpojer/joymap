@@ -30,7 +30,7 @@ import {
   StrictEffect,
   Button,
   Stick,
-} from '../types';
+} from '../index';
 
 export type BaseModule = ReturnType<typeof createModule>;
 

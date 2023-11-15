@@ -5,7 +5,7 @@ import createBaseModule from '../baseModule/base';
 import { buttonMap, stickMap } from '../common/utils';
 import { eventIsValid, getEventTokens, verifyTokens } from './eventUtils';
 
-import { RawGamepad, InputEvent, InputResult } from '../types';
+import { RawGamepad, InputEvent, InputResult } from '../index';
 
 export type EventModule = ReturnType<typeof createEventModule>;
 

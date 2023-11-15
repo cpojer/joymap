@@ -11,7 +11,7 @@ import {
 } from 'lodash/fp';
 
 import { getRawGamepads, gamepadIsValid } from './common/utils';
-import { RawGamepad, JoymapParams } from './types';
+import { RawGamepad, JoymapParams } from './index';
 import { BaseModule } from './baseModule/base';
 import { QueryModule } from './queryModule/query';
 import { EventModule } from './eventModule/event';

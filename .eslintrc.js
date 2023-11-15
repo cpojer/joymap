@@ -1,11 +1,6 @@
 module.exports = {
   parser: '@typescript-eslint/parser',
-  extends: [
-    'plugin:react/recommended',
-    'plugin:@typescript-eslint/recommended',
-    'prettier/@typescript-eslint',
-    'plugin:prettier/recommended',
-  ],
+  extends: ['plugin:@typescript-eslint/recommended'],
   plugins: ['@typescript-eslint'],
   parserOptions: {
     ecmaVersion: 2020,
@@ -26,13 +21,7 @@ module.exports = {
     '@typescript-eslint/restrict-plus-operands': 'error',
     '@typescript-eslint/array-type': 0,
     'no-unused-expressions': 0,
-    'react/display-name': 0,
     'require-await': 'error',
     'prefer-template': 'error',
-  },
-  settings: {
-    react: {
-      version: 'detect',
-    },
   },
 };

@@ -1,5 +1,5 @@
 import { forEach, reduce, map } from 'lodash/fp';
-import { CustomGamepad, RawGamepad, ButtonResult, StickResult } from '../types';
+import { CustomGamepad, RawGamepad, ButtonResult, StickResult } from '../index';
 
 // dev-helper type: expands object types one level deep
 export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
@@ -46,7 +46,7 @@ export function findIndexes(iterator: (a: number) => boolean, target: number[]) 
 
 export function getRawGamepads(): (RawGamepad | null)[] {
   if (navigator && navigator.getGamepads) {
-    return Array.from(navigator.getGamepads());
+    return Array.from(navigator.getGamepads() as ReadonlyArray<RawGamepad>);
   }
   return [];
 }

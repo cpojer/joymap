@@ -3,7 +3,7 @@ import { assignIn, mapValues, omit, forEach } from 'lodash/fp';
 
 import { buttonMap, stickMap } from '../common/utils';
 import createBaseModule from '../baseModule/base';
-import { StickResult, ButtonResult } from '../types';
+import { StickResult, ButtonResult } from '../index';
 
 // the following definition allows for the circular Mapper type
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
