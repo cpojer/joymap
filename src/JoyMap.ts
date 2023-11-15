@@ -14,7 +14,6 @@ import { getRawGamepads, gamepadIsValid } from './common/utils';
 import { RawGamepad, JoymapParams } from './types';
 import { BaseModule } from './baseModule/base';
 import { QueryModule } from './queryModule/query';
-import { StreamModule } from './streamModule/stream';
 import { EventModule } from './eventModule/event';
 
 interface JoymapState {
@@ -24,7 +23,7 @@ interface JoymapState {
   modules: AnyModule[];
 }
 
-export type AnyModule = BaseModule['module'] | QueryModule | StreamModule | EventModule;
+export type AnyModule = BaseModule['module'] | QueryModule | EventModule;
 
 export type Joymap = ReturnType<typeof createJoymap>;
 
