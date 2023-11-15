@@ -1,7 +1,7 @@
 {
-  "name": "joymap",
+  "name": "@nkzw/joymap",
   "version": "3.0.0",
-  "description": "A Gamepad API wrapper and mapping tool.",
+  "description": "A minimal Gamepad API wrapper and mapping tool.",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "files": [
@@ -14,7 +14,7 @@
     "test": "tsc && pnpm lint"
   },
   "author": {
-    "name": "Diego Doumecq",
+    "name": "Diego Doumecq & Christoph Nakazawa",
     "email": "licenciado.diego@gmail.com"
   },
   "tags": [
@@ -25,10 +25,10 @@
     "gamepad",
     "joystick"
   ],
-  "homepage": "https://github.com/diegodoumecq/joymap",
+  "homepage": "https://github.com/cpojer/joymap",
   "repository": {
     "type": "git",
-    "url": "https://github.com/diegodoumecq/joymap"
+    "url": "https://github.com/cpojer/joymap"
   },
   "license": "MIT",
   "dependencies": {
