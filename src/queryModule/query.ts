@@ -3,7 +3,7 @@ import createBaseModule from '../baseModule/base';
 import { buttonMap, mapValues, stickMap } from '../common/utils';
 import { ButtonResult, StickResult } from '../types';
 
-export interface QueryModule extends ReturnType<typeof createQueryModule> {}
+export type QueryModule = ReturnType<typeof createQueryModule>;
 
 export type MapperResult = Record<string, unknown> | null;
 
