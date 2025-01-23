@@ -104,7 +104,7 @@ export default function createQueryModule(params = {}) {
       );
     },
 
-    getButtons: (...inputNames: string[]) => {
+    getButtons: (...inputNames: Array<string>) => {
       if (!module.isConnected()) {
         const result: Record<string, ButtonResult> = {};
         inputNames.forEach((mapperName) => {
@@ -137,7 +137,7 @@ export default function createQueryModule(params = {}) {
       return mappers[mapperName](module);
     },
 
-    getMappers: (...mapperNames: string[]) => {
+    getMappers: (...mapperNames: Array<string>) => {
       if (!module.isConnected()) {
         const result: Record<string, MapperResult> = {};
         mapperNames.forEach((mapperName) => {
@@ -171,7 +171,7 @@ export default function createQueryModule(params = {}) {
       );
     },
 
-    getSticks: (...inputNames: string[]) => {
+    getSticks: (...inputNames: Array<string>) => {
       if (!module.isConnected()) {
         const result: Record<string, StickResult> = {};
         inputNames.forEach((mapperName) => {

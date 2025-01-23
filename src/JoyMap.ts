@@ -1,30 +1,28 @@
 import { BaseModule } from './baseModule/base.ts';
 import { gamepadIsValid, getRawGamepads } from './common/utils.ts';
 import { QueryModule } from './queryModule/query.ts';
-import { JoymapParams, RawGamepad } from './types.ts';
+import { JoymapOptions, RawGamepad } from './types.ts';
 
-interface JoymapState {
-  autoConnect: boolean;
-  gamepads: RawGamepad[];
-  modules: AnyModule[];
-  onPoll: () => void;
-}
+type JoymapState = {
+  readonly autoConnect: boolean;
+  gamepads: ReadonlyArray<RawGamepad>;
+  modules: Array<AnyModule>;
+  readonly onPoll: () => void;
+};
 
 export type AnyModule = BaseModule['module'] | QueryModule;
-
 export type Joymap = ReturnType<typeof createJoymap>;
 
-export default function createJoymap(params: JoymapParams = {}) {
-  let animationFrameRequestId: number | null = null;
-  const isSupported = navigator && typeof navigator.getGamepads === 'function';
-
+export default function createJoymap({ autoConnect, onPoll }: JoymapOptions) {
   const state: JoymapState = {
-    autoConnect: params.autoConnect !== false,
+    autoConnect: !!autoConnect,
     gamepads: [],
     modules: [],
-    onPoll: params.onPoll || (() => {}),
+    onPoll,
   };
 
+  const onGamepadChange = () => joymap.start();
+  let animationFrameRequestId: number | null = null;
   const joymap = {
     addModule: (module: AnyModule) => {
       state.modules.push(module);
@@ -42,7 +40,6 @@ export default function createJoymap(params: JoymapParams = {}) {
     },
 
     getGamepads: () => state.gamepads,
-
     getModules: () => state.modules,
 
     getUnusedPadId: () => {
@@ -57,12 +54,10 @@ export default function createJoymap(params: JoymapParams = {}) {
         .filter((id) => !modules.has(id));
     },
 
-    isSupported: () => isSupported,
-
     poll: () => {
       state.gamepads = getRawGamepads().filter(gamepadIsValid);
 
-      state.modules.forEach((module) => {
+      for (const module of state.modules) {
         if (state.autoConnect && !module.getPadId()) {
           const padId = joymap.getUnusedPadId();
           if (padId) {
@@ -88,9 +83,11 @@ export default function createJoymap(params: JoymapParams = {}) {
             module.disconnect();
           }
         }
-      });
+      }
 
-      state.onPoll();
+      if (state.gamepads.length > 0) {
+        state.onPoll();
+      }
     },
 
     removeModule: (module: AnyModule) => {
@@ -98,33 +95,35 @@ export default function createJoymap(params: JoymapParams = {}) {
       module.destroy();
     },
 
-    setAutoConnect: (autoConnect: boolean) => {
-      state.autoConnect = autoConnect;
-    },
-
-    setOnPoll: (onPoll: () => void) => {
-      state.onPoll = onPoll;
-    },
-
     start: () => {
-      if (isSupported && animationFrameRequestId === null) {
-        joymap.poll();
-        if (state.autoConnect) {
-          state.modules.forEach((module) => {
-            if (!module.isConnected()) {
-              const padId = joymap.getUnusedPadId();
-              if (padId) {
-                module.connect(padId);
-              }
-            }
-          });
-        }
-        const step = () => {
-          joymap.poll();
-          animationFrameRequestId = window.requestAnimationFrame(step);
-        };
-        animationFrameRequestId = window.requestAnimationFrame(step);
+      if (animationFrameRequestId != null) {
+        return;
       }
+
+      joymap.poll();
+
+      if (state.autoConnect) {
+        state.modules.forEach((module) => {
+          if (!module.isConnected()) {
+            const padId = joymap.getUnusedPadId();
+            if (padId) {
+              module.connect(padId);
+            }
+          }
+        });
+      }
+
+      window.addEventListener('gamepadconnected', onGamepadChange);
+      window.addEventListener('gamepaddisconnected', onGamepadChange);
+
+      const step = () => {
+        joymap.poll();
+        animationFrameRequestId = !state.gamepads.length
+          ? window.requestAnimationFrame(step)
+          : null;
+      };
+
+      animationFrameRequestId = window.requestAnimationFrame(step);
     },
 
     stop: () => {
@@ -132,6 +131,9 @@ export default function createJoymap(params: JoymapParams = {}) {
         window.cancelAnimationFrame(animationFrameRequestId);
         animationFrameRequestId = null;
       }
+
+      window.removeEventListener('gamepadconnected', onGamepadChange);
+      window.removeEventListener('gamepaddisconnected', onGamepadChange);
     },
   };
 

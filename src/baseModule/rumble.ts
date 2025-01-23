@@ -6,7 +6,10 @@ type ChannelName = string;
 
 export const MAX_DURATION = 5000;
 const defaultChannel = 'default';
-const allChannels: Record<GamepadId, Record<ChannelName, StrictEffect[]>> = {};
+const allChannels: Record<
+  GamepadId,
+  Record<ChannelName, Array<StrictEffect>>
+> = {};
 
 export function makeEffectStrict(effect: Effect | number): StrictEffect {
   if (typeof effect === 'number') {
@@ -44,7 +47,7 @@ export function stopRumble(padId: string, channelName = defaultChannel) {
 
 export function addRumble(
   padId: string,
-  effect: Effect | (Effect | number)[],
+  effect: Effect | Array<Effect | number>,
   channelName = defaultChannel,
 ) {
   if (!allChannels[padId]) {

@@ -1,6 +1,6 @@
-export type Button = number[];
+export type Button = Array<number>;
 
-export type Stick = { indexes: number[][]; inverts: boolean[] };
+export type Stick = { indexes: Array<Array<number>>; inverts: Array<boolean> };
 
 export interface ButtonResult {
   justChanged: boolean;
@@ -10,11 +10,11 @@ export interface ButtonResult {
 }
 
 export interface StickResult {
-  inverts: boolean[];
+  inverts: Array<boolean>;
   justChanged: boolean;
   pressed: boolean;
   type: 'stick';
-  value: number[];
+  value: Array<number>;
 }
 
 export type InputResult = ButtonResult | StickResult;
@@ -23,13 +23,13 @@ export type RawGamepad = Gamepad;
 
 export type CustomGamepad = {
   axes: ReadonlyArray<number>;
-  buttons: number[];
+  buttons: Array<number>;
   rawPad?: RawGamepad;
 };
 
-export interface JoymapParams {
+export interface JoymapOptions {
   autoConnect?: boolean;
-  onPoll?: () => void;
+  onPoll: () => void;
 }
 
 export interface BaseParams {
@@ -55,7 +55,7 @@ export interface StrictEffect {
 
 export interface ListenOptions {
   allowOffset: boolean;
-  callback: (indexes: number[] | number[][]) => void;
+  callback: (indexes: Array<number> | Array<Array<number>>) => void;
   consecutive: boolean;
   currentValue: number;
   quantity: number;
@@ -74,7 +74,7 @@ export type OperatorToken = string;
 export type EventToken = InputToken | OperatorToken;
 
 export interface InputEvent {
-  callback: (button: InputResult[]) => void;
+  callback: (button: Array<InputResult>) => void;
   name: string;
-  tokens: EventToken[];
+  tokens: Array<EventToken>;
 }

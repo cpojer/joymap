@@ -1,4 +1,9 @@
-import { nameIsValid } from '../common/utils.ts';
+import {
+  findIndexes,
+  isButtonSignificant,
+  isConsecutive,
+  nameIsValid,
+} from '../common/utils.ts';
 import {
   BaseParams,
   Button,
@@ -9,12 +14,6 @@ import {
   Stick,
   StrictEffect,
 } from '../types.ts';
-import {
-  getDefaultButtons,
-  getDefaultSticks,
-  mockGamepad,
-  updateListenOptions,
-} from './baseUtils.ts';
 import {
   addRumble,
   applyRumble,
@@ -37,6 +36,105 @@ interface BaseState {
 
   sticks: Record<string, Stick>;
   threshold: number;
+}
+
+const mockGamepad: CustomGamepad = {
+  axes: [],
+  buttons: [],
+  rawPad: undefined,
+};
+
+function updateListenOptions(
+  listenOptions: ListenOptions,
+  pad: CustomGamepad,
+  threshold: number,
+) {
+  const {
+    allowOffset,
+    callback,
+    consecutive,
+    currentValue,
+    quantity,
+    targetValue,
+    type,
+    useTimeStamp,
+  } = listenOptions;
+
+  const indexes =
+    type === 'axes'
+      ? findIndexes((value) => Math.abs(value) > threshold, pad.axes)
+      : findIndexes(
+          (value) => isButtonSignificant(value, threshold),
+          pad.buttons,
+        );
+
+  if (
+    indexes.length === quantity &&
+    (!consecutive || isConsecutive(indexes)) &&
+    (allowOffset || indexes[0] % quantity === 0)
+  ) {
+    if (useTimeStamp && currentValue === 0) {
+      listenOptions.currentValue = Date.now();
+      return listenOptions;
+    }
+
+    const comparison = useTimeStamp
+      ? Date.now() - currentValue
+      : currentValue + 1;
+
+    if (targetValue <= comparison) {
+      if (type === 'axes') {
+        callback([indexes]);
+      } else {
+        callback(indexes);
+      }
+      return null;
+    }
+
+    if (!useTimeStamp) {
+      listenOptions.currentValue = comparison;
+    }
+
+    return listenOptions;
+  }
+
+  listenOptions.currentValue = 0;
+  return listenOptions;
+}
+
+function getDefaultButtons(): Record<string, Button> {
+  return {
+    A: [0],
+    B: [1],
+    L1: [4],
+    L2: [6],
+    L3: [10],
+    R1: [5],
+    R2: [7],
+    R3: [11],
+    X: [2],
+    Y: [3],
+    dpadDown: [13],
+    dpadLeft: [14],
+    dpadRight: [15],
+    dpadUp: [12],
+    home: [16],
+    select: [8],
+    start: [9],
+  };
+}
+
+function getDefaultSticks(): Record<string, Stick> {
+  return {
+    L: {
+      indexes: [[0, 1]],
+      inverts: [false, false],
+    },
+    R: {
+      indexes: [[2, 3]],
+      inverts: [false, false],
+    },
+  };
 }
 
 const findKey = <T>(
@@ -74,7 +172,7 @@ export default function createModule(params: BaseParams = {}) {
   };
 
   const module = {
-    addRumble: (effect: Effect | Effect[], channelName?: string) => {
+    addRumble: (effect: Effect | Array<Effect>, channelName?: string) => {
       if (state.pad.rawPad) {
         addRumble(state.pad.rawPad.id, effect, channelName);
       }
@@ -91,7 +189,7 @@ export default function createModule(params: BaseParams = {}) {
         );
       }
 
-      module.listenButton((indexes: number[]) => {
+      module.listenButton((indexes: Array<number>) => {
         const resultName = findKey(
           (value) => value[0] === indexes[0],
           state.buttons,
@@ -129,7 +227,7 @@ export default function createModule(params: BaseParams = {}) {
       connected = false;
     },
 
-    getButtonIndexes: (...inputNames: string[]) => [
+    getButtonIndexes: (...inputNames: Array<string>) => [
       ...new Set(
         inputNames.flatMap((inputName: string) => state.buttons[inputName]),
       ),
@@ -137,7 +235,7 @@ export default function createModule(params: BaseParams = {}) {
 
     getPadId: () => gamepadId,
 
-    getStickIndexes: (...inputNames: string[]) => [
+    getStickIndexes: (...inputNames: Array<string>) => [
       ...new Set(
         inputNames
           .flatMap((inputName: string) => state.sticks[inputName].indexes)
@@ -145,7 +243,7 @@ export default function createModule(params: BaseParams = {}) {
       ),
     ],
 
-    invertSticks: (inverts: boolean[], ...inputNames: string[]) => {
+    invertSticks: (inverts: Array<boolean>, ...inputNames: Array<string>) => {
       inputNames.forEach((inputName) => {
         const stick = state.sticks[inputName];
         if (stick.inverts.length === inverts.length) {
@@ -169,7 +267,7 @@ export default function createModule(params: BaseParams = {}) {
     },
 
     listenAxis: (
-      callback: (indexes: number[][]) => void,
+      callback: (indexes: Array<Array<number>>) => void,
       quantity = 2,
       {
         allowOffset = true,
@@ -183,7 +281,9 @@ export default function createModule(params: BaseParams = {}) {
     ) => {
       listenOptions = {
         allowOffset,
-        callback: callback as (indexes: number[] | number[][]) => void,
+        callback: callback as (
+          indexes: Array<number> | Array<Array<number>>,
+        ) => void,
         consecutive,
         currentValue: 0,
         quantity,
@@ -194,7 +294,7 @@ export default function createModule(params: BaseParams = {}) {
     },
 
     listenButton: (
-      callback: (indexes: number[]) => void,
+      callback: (indexes: Array<number>) => void,
       quantity = 1,
       {
         allowOffset = true,
@@ -208,7 +308,9 @@ export default function createModule(params: BaseParams = {}) {
     ) => {
       listenOptions = {
         allowOffset,
-        callback: callback as (indexes: number[] | number[][]) => void,
+        callback: callback as (
+          indexes: Array<number> | Array<Array<number>>,
+        ) => void,
         consecutive,
         currentValue: 0,
         quantity,
@@ -218,7 +320,7 @@ export default function createModule(params: BaseParams = {}) {
       };
     },
 
-    setButton: (inputName: string, indexes: number[]) => {
+    setButton: (inputName: string, indexes: Array<number>) => {
       if (!nameIsValid(inputName)) {
         throw new Error(
           `On setButton('${inputName}'): argument contains invalid characters`,
@@ -227,7 +329,11 @@ export default function createModule(params: BaseParams = {}) {
       state.buttons[inputName] = indexes;
     },
 
-    setStick: (inputName: string, indexes: number[][], inverts?: boolean[]) => {
+    setStick: (
+      inputName: string,
+      indexes: Array<Array<number>>,
+      inverts?: Array<boolean>,
+    ) => {
       if (!nameIsValid(inputName)) {
         throw new Error(
           `On setStick('${inputName}'): inputName contains invalid characters`,
@@ -257,7 +363,7 @@ export default function createModule(params: BaseParams = {}) {
         );
       }
 
-      module.listenAxis((indexesResult: number[][]) => {
+      module.listenAxis((indexesResult: Array<Array<number>>) => {
         const resultName = findKey(({ indexes }) => {
           if (indexes.length !== indexesResult.length) {
             return false;

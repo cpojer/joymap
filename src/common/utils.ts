@@ -15,7 +15,7 @@ export type ExpendRecursively<T> = T extends object
     : never
   : T;
 
-export function isConsecutive(target: number[]) {
+export function isConsecutive(target: Array<number>) {
   const { length } = target;
 
   if (length <= 1) {
@@ -79,7 +79,10 @@ export function isButtonSignificant(value = 0, threshold: number) {
   return Math.abs(value) > threshold;
 }
 
-export function isStickSignificant(stickValue: number[], threshold: number) {
+export function isStickSignificant(
+  stickValue: Array<number>,
+  threshold: number,
+) {
   const squaredMagnitude = stickValue.reduce(
     (result, value) => result + value ** 2,
     0,
@@ -90,7 +93,7 @@ export function isStickSignificant(stickValue: number[], threshold: number) {
 export function buttonMap(
   pad: CustomGamepad,
   prevPad: CustomGamepad,
-  indexes: number[],
+  indexes: Array<number>,
   threshold: number,
   clampThreshold: boolean,
 ): ButtonResult {
@@ -125,12 +128,12 @@ export function buttonMap(
 }
 
 export function roundSticks(
-  indexMaps: number[][],
+  indexMaps: Array<Array<number>>,
   axes: ReadonlyArray<number>,
   threshold: number,
 ) {
   let stickNumber = 0;
-  let axesSums: number[] = [];
+  let axesSums: Array<number> = [];
 
   indexMaps.forEach((indexes) => {
     const values = indexes.map((i) => axes[i]);
@@ -149,8 +152,8 @@ export function roundSticks(
 export function stickMap(
   pad: CustomGamepad,
   prevPad: CustomGamepad,
-  indexMaps: number[][],
-  inverts: boolean[],
+  indexMaps: Array<Array<number>>,
+  inverts: Array<boolean>,
   threshold: number,
   clampThreshold: boolean,
 ): StickResult {
