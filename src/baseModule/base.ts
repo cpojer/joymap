@@ -315,7 +315,7 @@ export default function createModule(params: BaseParams = {}) {
     update: (gamepad: RawGamepad) => {
       state.prevPad = state.pad;
       state.pad = {
-        axes: gamepad.axes as number[],
+        axes: gamepad.axes,
         buttons: gamepad.buttons.map((a) => a.value),
         rawPad: gamepad,
       };

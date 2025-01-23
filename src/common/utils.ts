@@ -35,7 +35,7 @@ export function isConsecutive(target: number[]) {
 
 export function findIndexes(
   iterator: (a: number) => boolean,
-  target: number[],
+  target: ReadonlyArray<number>,
 ) {
   const { length } = target;
   const result = [];
@@ -51,14 +51,16 @@ export function findIndexes(
   return result;
 }
 
-export function getRawGamepads(): (RawGamepad | null)[] {
+export function getRawGamepads(): ReadonlyArray<RawGamepad | null> {
   if (navigator && navigator.getGamepads) {
-    return Array.from(navigator.getGamepads() as ReadonlyArray<RawGamepad>);
+    return Array.from(navigator.getGamepads());
   }
   return [];
 }
 
-export function gamepadIsValid(rawGamepad: RawGamepad | null) {
+export function gamepadIsValid(
+  rawGamepad: RawGamepad | null,
+): rawGamepad is RawGamepad {
   return (
     !!rawGamepad &&
     !!rawGamepad.connected &&
@@ -124,7 +126,7 @@ export function buttonMap(
 
 export function roundSticks(
   indexMaps: number[][],
-  axes: number[],
+  axes: ReadonlyArray<number>,
   threshold: number,
 ) {
   let stickNumber = 0;

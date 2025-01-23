@@ -21,11 +21,11 @@ export type InputResult = ButtonResult | StickResult;
 
 export type RawGamepad = Gamepad;
 
-export interface CustomGamepad {
-  axes: number[];
+export type CustomGamepad = {
+  axes: ReadonlyArray<number>;
   buttons: number[];
   rawPad?: RawGamepad;
-}
+};
 
 export interface JoymapParams {
   autoConnect?: boolean;

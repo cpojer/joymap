@@ -32,9 +32,6 @@
     "url": "https://github.com/cpojer/joymap"
   },
   "license": "MIT",
-  "dependencies": {
-    "fast-memoize": "^2.5.2"
-  },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.4.1",
     "@nkzw/eslint-config": "^2.0.0",
@@ -44,6 +41,7 @@
     "dts-bundle-generator": "^9.5.1",
     "esbuild": "^0.24.2",
     "eslint": "^9.18.0",
+    "fast-memoize": "^2.5.2",
     "prettier": "^3.4.2",
     "typescript": "^5.7.3"
   }

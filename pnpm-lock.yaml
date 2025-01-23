@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      fast-memoize:
-        specifier: ^2.5.2
-        version: 2.5.2
     devDependencies:
       '@ianvs/prettier-plugin-sort-imports':
         specifier: ^4.4.1
@@ -36,6 +32,9 @@ importers:
       eslint:
         specifier: ^9.18.0
         version: 9.18.0
+      fast-memoize:
+        specifier: ^2.5.2
+        version: 2.5.2
       prettier:
         specifier: ^3.4.2
         version: 3.4.2

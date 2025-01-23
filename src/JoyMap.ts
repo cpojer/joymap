@@ -60,7 +60,7 @@ export default function createJoymap(params: JoymapParams = {}) {
     isSupported: () => isSupported,
 
     poll: () => {
-      state.gamepads = getRawGamepads().filter(gamepadIsValid) as RawGamepad[];
+      state.gamepads = getRawGamepads().filter(gamepadIsValid);
 
       state.modules.forEach((module) => {
         if (state.autoConnect && !module.getPadId()) {
