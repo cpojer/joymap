@@ -118,7 +118,7 @@ export default function createJoymap({ autoConnect, onPoll }: JoymapOptions) {
 
       const step = () => {
         joymap.poll();
-        animationFrameRequestId = !state.gamepads.length
+        animationFrameRequestId = state.gamepads.length
           ? window.requestAnimationFrame(step)
           : null;
       };

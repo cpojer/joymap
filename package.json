@@ -1,6 +1,6 @@
 {
   "name": "@nkzw/joymap",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "A minimal Gamepad API wrapper and mapping tool.",
   "type": "module",
   "main": "./lib/index.js",
