@@ -1,7 +1,8 @@
 {
   "name": "@nkzw/joymap",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "A minimal Gamepad API wrapper and mapping tool.",
+  "type": "module",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "files": [
@@ -10,7 +11,7 @@
   "scripts": {
     "build": "mkdir -p lib && rm -rf lib/*; dts-bundle-generator -o lib/index.d.ts src/index.ts && prettier --ignore-path '' --write lib/index.d.ts && esbuild --target=es2017 --format=esm --outfile=lib/index.js --bundle ./src/index.ts",
     "format": "prettier \"**/*.{js,jsx,json,tsx,ts}\" --write",
-    "lint": "eslint --ignore-path .prettierignore \"**/*.{js,jsx,ts,tsx}\"",
+    "lint": "eslint --cache .",
     "test": "tsc && pnpm lint"
   },
   "author": {
@@ -35,21 +36,15 @@
     "fast-memoize": "^2.5.2"
   },
   "devDependencies": {
-    "@ianvs/prettier-plugin-sort-imports": "^4.3.1",
-    "@types/node": "^22.7.6",
-    "@typescript-eslint/eslint-plugin": "^8.10.0",
-    "@typescript-eslint/parser": "^8.10.0",
+    "@ianvs/prettier-plugin-sort-imports": "^4.4.1",
+    "@nkzw/eslint-config": "^2.0.0",
+    "@types/node": "^22.10.9",
+    "@typescript-eslint/eslint-plugin": "^8.21.0",
+    "@typescript-eslint/parser": "^8.21.0",
     "dts-bundle-generator": "^9.5.1",
-    "esbuild": "^0.24.0",
-    "eslint": "^8.57.1",
-    "prettier": "^3.3.3",
-    "typescript": "^5.6.3"
-  },
-  "pnpm": {
-    "updateConfig": {
-      "ignoreDependencies": [
-        "eslint"
-      ]
-    }
+    "esbuild": "^0.24.2",
+    "eslint": "^9.18.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3"
   }
 }
