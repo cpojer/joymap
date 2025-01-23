@@ -3,18 +3,18 @@ export type Button = number[];
 export type Stick = { indexes: number[][]; inverts: boolean[] };
 
 export interface ButtonResult {
+  justChanged: boolean;
+  pressed: boolean;
   type: 'button';
   value: number;
-  pressed: boolean;
-  justChanged: boolean;
 }
 
 export interface StickResult {
+  inverts: boolean[];
+  justChanged: boolean;
+  pressed: boolean;
   type: 'stick';
   value: number[];
-  pressed: boolean;
-  justChanged: boolean;
-  inverts: boolean[];
 }
 
 export type InputResult = ButtonResult | StickResult;
@@ -28,40 +28,40 @@ export interface CustomGamepad {
 }
 
 export interface JoymapParams {
-  onPoll?: () => void;
   autoConnect?: boolean;
+  onPoll?: () => void;
 }
 
 export interface BaseParams {
+  clampThreshold?: boolean;
   padId?: string;
   threshold?: number;
-  clampThreshold?: boolean;
 }
 
 export type Effect =
   | number
   | {
       duration: number;
-      weakMagnitude?: number;
       strongMagnitude?: number;
+      weakMagnitude?: number;
     };
 
 // StrictEffect means all values are valid (duration > 0, magnitudes between 0 and 1)
 export interface StrictEffect {
   duration: number;
-  weakMagnitude: number;
   strongMagnitude: number;
+  weakMagnitude: number;
 }
 
 export interface ListenOptions {
-  callback: (indexes: number[] | number[][]) => void;
-  quantity: number;
-  type: 'buttons' | 'axes';
-  currentValue: number;
-  useTimeStamp: boolean;
-  targetValue: number;
-  consecutive: boolean;
   allowOffset: boolean;
+  callback: (indexes: number[] | number[][]) => void;
+  consecutive: boolean;
+  currentValue: number;
+  quantity: number;
+  targetValue: number;
+  type: 'buttons' | 'axes';
+  useTimeStamp: boolean;
 }
 
 export interface InputToken {
@@ -74,7 +74,7 @@ export type OperatorToken = string;
 export type EventToken = InputToken | OperatorToken;
 
 export interface InputEvent {
-  name: string;
   callback: (button: InputResult[]) => void;
+  name: string;
   tokens: EventToken[];
 }

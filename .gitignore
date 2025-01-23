@@ -1,7 +1,5 @@
-.DS_STORE
-devBundle
-node_modules
-.module-cache
-*.log*
-lib
+.eslintcache
+.pnpm-debug.log
+/lib/
+/node_modules/
 tsconfig.tsbuildinfo

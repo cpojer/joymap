@@ -1,5 +1,5 @@
-import { mapValues } from '../common/utils';
-import { Effect, RawGamepad, StrictEffect } from '../types';
+import { mapValues } from '../common/utils.ts';
+import { Effect, RawGamepad, StrictEffect } from '../types.ts';
 
 type GamepadId = string;
 type ChannelName = string;
@@ -12,15 +12,15 @@ export function makeEffectStrict(effect: Effect | number): StrictEffect {
   if (typeof effect === 'number') {
     return {
       duration: effect,
-      weakMagnitude: 0,
       strongMagnitude: 0,
+      weakMagnitude: 0,
     };
   }
 
   return {
     duration: Math.max(0, effect.duration),
-    weakMagnitude: Math.min(1, Math.max(0, effect.weakMagnitude || 0)),
     strongMagnitude: Math.min(1, Math.max(0, effect.strongMagnitude || 0)),
+    weakMagnitude: Math.min(1, Math.max(0, effect.weakMagnitude || 0)),
   };
 }
 
@@ -84,9 +84,9 @@ export function getCurrentEffect(padId: string): StrictEffect {
   );
 
   return {
+    duration: MAX_DURATION,
     strongMagnitude: Math.min(1, Math.max(0, strongMagnitude)),
     weakMagnitude: Math.min(1, Math.max(0, weakMagnitude)),
-    duration: MAX_DURATION,
   };
 }
 

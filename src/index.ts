@@ -1,10 +1,10 @@
-import createBaseModule, { BaseModule } from './baseModule/base';
-import createJoymap, { AnyModule, Joymap } from './JoyMap';
+import createBaseModule, { BaseModule } from './baseModule/base.ts';
+import createJoymap, { AnyModule, Joymap } from './JoyMap.ts';
 import createQueryModule, {
   Mapper,
   MapperResult,
   QueryModule,
-} from './queryModule/query';
+} from './queryModule/query.ts';
 
 export { createBaseModule, createQueryModule, createJoymap };
 

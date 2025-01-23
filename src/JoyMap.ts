@@ -1,13 +1,13 @@
-import { BaseModule } from './baseModule/base';
-import { gamepadIsValid, getRawGamepads } from './common/utils';
-import { QueryModule } from './queryModule/query';
-import { JoymapParams, RawGamepad } from './types';
+import { BaseModule } from './baseModule/base.ts';
+import { gamepadIsValid, getRawGamepads } from './common/utils.ts';
+import { QueryModule } from './queryModule/query.ts';
+import { JoymapParams, RawGamepad } from './types.ts';
 
 interface JoymapState {
-  onPoll: () => void;
   autoConnect: boolean;
   gamepads: RawGamepad[];
   modules: AnyModule[];
+  onPoll: () => void;
 }
 
 export type AnyModule = BaseModule['module'] | QueryModule;
@@ -19,67 +19,13 @@ export default function createJoymap(params: JoymapParams = {}) {
   const isSupported = navigator && typeof navigator.getGamepads === 'function';
 
   const state: JoymapState = {
-    onPoll: params.onPoll || (() => {}),
     autoConnect: params.autoConnect !== false,
     gamepads: [],
     modules: [],
+    onPoll: params.onPoll || (() => {}),
   };
 
   const joymap = {
-    isSupported: () => isSupported,
-
-    start: () => {
-      if (isSupported && animationFrameRequestId === null) {
-        joymap.poll();
-        if (state.autoConnect) {
-          state.modules.forEach((module) => {
-            if (!module.isConnected()) {
-              const padId = joymap.getUnusedPadId();
-              if (padId) {
-                module.connect(padId);
-              }
-            }
-          });
-        }
-        const step = () => {
-          joymap.poll();
-          animationFrameRequestId = window.requestAnimationFrame(step);
-        };
-        animationFrameRequestId = window.requestAnimationFrame(step);
-      }
-    },
-
-    stop: () => {
-      if (animationFrameRequestId !== null) {
-        window.cancelAnimationFrame(animationFrameRequestId);
-        animationFrameRequestId = null;
-      }
-    },
-
-    setOnPoll: (onPoll: () => void) => {
-      state.onPoll = onPoll;
-    },
-
-    setAutoConnect: (autoConnect: boolean) => {
-      state.autoConnect = autoConnect;
-    },
-
-    getGamepads: () => state.gamepads,
-
-    getModules: () => state.modules,
-
-    getUnusedPadIds: () => {
-      const modules = new Set(state.modules.map((module) => module.getPadId()));
-      return state.gamepads
-        .map(({ id }) => id)
-        .filter((id) => !modules.has(id));
-    },
-
-    getUnusedPadId: () => {
-      const usedIds = new Set(state.modules.map((module) => module.getPadId()));
-      return state.gamepads.find(({ id }) => !usedIds.has(id))?.id;
-    },
-
     addModule: (module: AnyModule) => {
       state.modules.push(module);
 
@@ -91,14 +37,27 @@ export default function createJoymap(params: JoymapParams = {}) {
       }
     },
 
-    removeModule: (module: AnyModule) => {
-      state.modules = state.modules.filter((m) => m !== module);
-      module.destroy();
-    },
-
     clearModules: () => {
       state.modules.forEach((module) => joymap.removeModule(module));
     },
+
+    getGamepads: () => state.gamepads,
+
+    getModules: () => state.modules,
+
+    getUnusedPadId: () => {
+      const usedIds = new Set(state.modules.map((module) => module.getPadId()));
+      return state.gamepads.find(({ id }) => !usedIds.has(id))?.id;
+    },
+
+    getUnusedPadIds: () => {
+      const modules = new Set(state.modules.map((module) => module.getPadId()));
+      return state.gamepads
+        .map(({ id }) => id)
+        .filter((id) => !modules.has(id));
+    },
+
+    isSupported: () => isSupported,
 
     poll: () => {
       state.gamepads = getRawGamepads().filter(gamepadIsValid) as RawGamepad[];
@@ -132,6 +91,47 @@ export default function createJoymap(params: JoymapParams = {}) {
       });
 
       state.onPoll();
+    },
+
+    removeModule: (module: AnyModule) => {
+      state.modules = state.modules.filter((m) => m !== module);
+      module.destroy();
+    },
+
+    setAutoConnect: (autoConnect: boolean) => {
+      state.autoConnect = autoConnect;
+    },
+
+    setOnPoll: (onPoll: () => void) => {
+      state.onPoll = onPoll;
+    },
+
+    start: () => {
+      if (isSupported && animationFrameRequestId === null) {
+        joymap.poll();
+        if (state.autoConnect) {
+          state.modules.forEach((module) => {
+            if (!module.isConnected()) {
+              const padId = joymap.getUnusedPadId();
+              if (padId) {
+                module.connect(padId);
+              }
+            }
+          });
+        }
+        const step = () => {
+          joymap.poll();
+          animationFrameRequestId = window.requestAnimationFrame(step);
+        };
+        animationFrameRequestId = window.requestAnimationFrame(step);
+      }
+    },
+
+    stop: () => {
+      if (animationFrameRequestId !== null) {
+        window.cancelAnimationFrame(animationFrameRequestId);
+        animationFrameRequestId = null;
+      }
     },
   };
 

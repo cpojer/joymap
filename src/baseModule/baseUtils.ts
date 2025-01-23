@@ -2,8 +2,8 @@ import {
   findIndexes,
   isButtonSignificant,
   isConsecutive,
-} from '../common/utils';
-import { Button, CustomGamepad, ListenOptions, Stick } from '../types';
+} from '../common/utils.ts';
+import { Button, CustomGamepad, ListenOptions, Stick } from '../types.ts';
 
 export const mockGamepad: CustomGamepad = {
   axes: [],
@@ -17,14 +17,14 @@ export function updateListenOptions(
   threshold: number,
 ) {
   const {
-    callback,
-    quantity,
-    type,
-    currentValue,
-    targetValue,
-    useTimeStamp,
-    consecutive,
     allowOffset,
+    callback,
+    consecutive,
+    currentValue,
+    quantity,
+    targetValue,
+    type,
+    useTimeStamp,
   } = listenOptions;
 
   const indexes =
@@ -71,23 +71,23 @@ export function updateListenOptions(
 
 export function getDefaultButtons(): Record<string, Button> {
   return {
-    dpadUp: [12],
-    dpadDown: [13],
-    dpadLeft: [14],
-    dpadRight: [15],
+    A: [0],
+    B: [1],
     L1: [4],
     L2: [6],
     L3: [10],
     R1: [5],
     R2: [7],
     R3: [11],
-    A: [0],
-    B: [1],
     X: [2],
     Y: [3],
-    start: [9],
-    select: [8],
+    dpadDown: [13],
+    dpadLeft: [14],
+    dpadRight: [15],
+    dpadUp: [12],
     home: [16],
+    select: [8],
+    start: [9],
   };
 }
 

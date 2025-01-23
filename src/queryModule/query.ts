@@ -1,7 +1,7 @@
 import memoize from 'fast-memoize';
-import createBaseModule from '../baseModule/base';
-import { buttonMap, mapValues, stickMap } from '../common/utils';
-import { ButtonResult, StickResult } from '../types';
+import createBaseModule from '../baseModule/base.ts';
+import { buttonMap, mapValues, stickMap } from '../common/utils.ts';
+import { ButtonResult, StickResult } from '../types.ts';
 
 export type QueryModule = ReturnType<typeof createQueryModule>;
 
@@ -12,29 +12,84 @@ export type Mapper = (module: QueryModule) => MapperResult;
 export const emptyMapper: MapperResult = null;
 
 export const emptyStick: StickResult = {
+  inverts: [false, false],
+  justChanged: false,
+  pressed: false,
   type: 'stick',
   value: [0, 0],
-  pressed: false,
-  justChanged: false,
-  inverts: [false, false],
 };
 
 export const emptyButton: ButtonResult = {
+  justChanged: false,
+  pressed: false,
   type: 'button',
   value: 0,
-  pressed: false,
-  justChanged: false,
 };
 
 export default function createQueryModule(params = {}) {
-  const { state, module: baseModule } = createBaseModule(params);
+  const { module: baseModule, state } = createBaseModule(params);
 
   let mappers: Record<string, Mapper> = {};
 
+  // @ts-expect-error
   const buttonMapMemoized = memoize(buttonMap);
+  // @ts-expect-error
   const stickMapMemoized = memoize(stickMap);
 
   const module = Object.assign(baseModule, {
+    clearMappers: () => {
+      mappers = {};
+    },
+
+    destroy: () => {
+      baseModule.destroy();
+      module.clearMappers();
+    },
+
+    getAllButtons: (): Record<string, ButtonResult> => {
+      if (!module.isConnected()) {
+        return mapValues(() => emptyButton, state.buttons);
+      }
+
+      return mapValues(
+        (button) =>
+          buttonMapMemoized(
+            state.pad,
+            state.prevPad,
+            button,
+            state.threshold,
+            state.clampThreshold,
+          ),
+        state.buttons,
+      );
+    },
+
+    getAllMappers: (): Record<string, MapperResult> => {
+      if (!module.isConnected()) {
+        return mapValues(() => emptyMapper, mappers);
+      }
+
+      return mapValues((mapper) => mapper(module), mappers);
+    },
+
+    getAllSticks: (): Record<string, StickResult> => {
+      if (!module.isConnected()) {
+        return mapValues(() => emptyStick, state.sticks);
+      }
+
+      return mapValues((stick) => {
+        const { indexes, inverts } = stick;
+        return stickMapMemoized(
+          state.pad,
+          state.prevPad,
+          indexes,
+          inverts,
+          state.threshold,
+          state.clampThreshold,
+        );
+      }, state.sticks);
+    },
+
     getButton: (inputName: string) => {
       if (!module.isConnected()) {
         return emptyButton;
@@ -73,22 +128,31 @@ export default function createQueryModule(params = {}) {
       return result;
     },
 
-    getAllButtons: (): Record<string, ButtonResult> => {
+    getMapper: (mapperName: string) => {
       if (!module.isConnected()) {
-        return mapValues(() => emptyButton, state.buttons);
+        const emptyMapper = null;
+        return emptyMapper;
       }
 
-      return mapValues(
-        (button) =>
-          buttonMapMemoized(
-            state.pad,
-            state.prevPad,
-            button,
-            state.threshold,
-            state.clampThreshold,
-          ),
-        state.buttons,
-      );
+      return mappers[mapperName](module);
+    },
+
+    getMappers: (...mapperNames: string[]) => {
+      if (!module.isConnected()) {
+        const result: Record<string, MapperResult> = {};
+        mapperNames.forEach((mapperName) => {
+          result[mapperName] = emptyMapper;
+        });
+
+        return result;
+      }
+
+      const result: Record<string, MapperResult> = {};
+      mapperNames.forEach((mapperName) => {
+        result[mapperName] = mappers[mapperName](module);
+      });
+
+      return result;
     },
 
     getStick: (inputName: string) => {
@@ -133,74 +197,12 @@ export default function createQueryModule(params = {}) {
       return result;
     },
 
-    getAllSticks: (): Record<string, StickResult> => {
-      if (!module.isConnected()) {
-        return mapValues(() => emptyStick, state.sticks);
-      }
-
-      return mapValues((stick) => {
-        const { indexes, inverts } = stick;
-        return stickMapMemoized(
-          state.pad,
-          state.prevPad,
-          indexes,
-          inverts,
-          state.threshold,
-          state.clampThreshold,
-        );
-      }, state.sticks);
-    },
-
-    getMapper: (mapperName: string) => {
-      if (!module.isConnected()) {
-        const emptyMapper = null;
-        return emptyMapper;
-      }
-
-      return mappers[mapperName](module);
-    },
-
-    getMappers: (...mapperNames: string[]) => {
-      if (!module.isConnected()) {
-        const result: Record<string, MapperResult> = {};
-        mapperNames.forEach((mapperName) => {
-          result[mapperName] = emptyMapper;
-        });
-
-        return result;
-      }
-
-      const result: Record<string, MapperResult> = {};
-      mapperNames.forEach((mapperName) => {
-        result[mapperName] = mappers[mapperName](module);
-      });
-
-      return result;
-    },
-
-    getAllMappers: (): Record<string, MapperResult> => {
-      if (!module.isConnected()) {
-        return mapValues(() => emptyMapper, mappers);
-      }
-
-      return mapValues((mapper) => mapper(module), mappers);
-    },
-
-    setMapper: (mapperName: string, mapper: Mapper) => {
-      mappers[mapperName] = mapper;
-    },
-
     removeMapper: (mapperName: string) => {
       delete mappers[mapperName];
     },
 
-    clearMappers: () => {
-      mappers = {};
-    },
-
-    destroy: () => {
-      baseModule.destroy();
-      module.clearMappers();
+    setMapper: (mapperName: string, mapper: Mapper) => {
+      mappers[mapperName] = mapper;
     },
   });
 

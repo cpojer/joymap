@@ -1,4 +1,9 @@
-import { ButtonResult, CustomGamepad, RawGamepad, StickResult } from '../types';
+import {
+  ButtonResult,
+  CustomGamepad,
+  RawGamepad,
+  StickResult,
+} from '../types.ts';
 
 // dev-helper type: expands object types one level deep
 export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
@@ -65,7 +70,7 @@ export function gamepadIsValid(rawGamepad: RawGamepad | null) {
 }
 
 export function nameIsValid(name: string) {
-  return /^[a-z0-9]+$/i.test(name);
+  return /^[\da-z]+$/i.test(name);
 }
 
 export function isButtonSignificant(value = 0, threshold: number) {
@@ -110,10 +115,10 @@ export function buttonMap(
   }
 
   return {
+    justChanged: pressed !== prevPressed,
+    pressed,
     type: 'button',
     value: !clampThreshold || pressed ? value : 0,
-    pressed,
-    justChanged: pressed !== prevPressed,
   };
 }
 
@@ -155,15 +160,15 @@ export function stickMap(
   const pressed = isStickSignificant(value, threshold);
 
   return {
+    inverts,
+    justChanged: pressed !== prevPressed,
+    pressed,
     type: 'stick',
     value: value.map(
       !clampThreshold || pressed
         ? (v, i) => (!inverts[i] ? v : v * -1)
         : () => 0,
     ),
-    pressed,
-    justChanged: pressed !== prevPressed,
-    inverts,
   };
 }
 

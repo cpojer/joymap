@@ -1,4 +1,4 @@
-import { nameIsValid } from '../common/utils';
+import { nameIsValid } from '../common/utils.ts';
 import {
   BaseParams,
   Button,
@@ -8,13 +8,13 @@ import {
   RawGamepad,
   Stick,
   StrictEffect,
-} from '../types';
+} from '../types.ts';
 import {
   getDefaultButtons,
   getDefaultSticks,
   mockGamepad,
   updateListenOptions,
-} from './baseUtils';
+} from './baseUtils.ts';
 import {
   addRumble,
   applyRumble,
@@ -22,21 +22,21 @@ import {
   MAX_DURATION,
   stopRumble,
   updateChannels,
-} from './rumble';
+} from './rumble.ts';
 
 export type BaseModule = ReturnType<typeof createModule>;
 
 interface BaseState {
-  threshold: number;
+  buttons: Record<string, Button>;
   clampThreshold: boolean;
+  lastRumbleUpdate: number;
+  lastUpdate: number;
   pad: CustomGamepad;
   prevPad: CustomGamepad;
   prevRumble: StrictEffect;
-  lastRumbleUpdate: number;
-  lastUpdate: number;
 
-  buttons: Record<string, Button>;
   sticks: Record<string, Stick>;
+  threshold: number;
 }
 
 const findKey = <T>(
@@ -57,29 +57,60 @@ export default function createModule(params: BaseParams = {}) {
   let connected = !!params.padId;
 
   const state: BaseState = {
-    threshold: params.threshold || 0.2,
+    buttons: getDefaultButtons(),
     clampThreshold: params.clampThreshold !== false,
+    lastRumbleUpdate: Date.now(),
+    lastUpdate: Date.now(),
     pad: mockGamepad,
     prevPad: mockGamepad,
     prevRumble: {
       duration: 0,
-      weakMagnitude: 0,
       strongMagnitude: 0,
+      weakMagnitude: 0,
     },
-    lastRumbleUpdate: Date.now(),
-    lastUpdate: Date.now(),
 
-    buttons: getDefaultButtons(),
     sticks: getDefaultSticks(),
+    threshold: params.threshold || 0.2,
   };
 
   const module = {
-    getPadId: () => gamepadId,
+    addRumble: (effect: Effect | Effect[], channelName?: string) => {
+      if (state.pad.rawPad) {
+        addRumble(state.pad.rawPad.id, effect, channelName);
+      }
+    },
 
-    isConnected: () => connected,
+    buttonBindOnPress: (
+      inputName: string,
+      callback: (buttonName?: string) => void,
+      allowDuplication = false,
+    ) => {
+      if (!nameIsValid(inputName)) {
+        throw new Error(
+          `On buttonBindOnPress('${inputName}'): inputName contains invalid characters`,
+        );
+      }
 
-    disconnect: () => {
-      connected = false;
+      module.listenButton((indexes: number[]) => {
+        const resultName = findKey(
+          (value) => value[0] === indexes[0],
+          state.buttons,
+        );
+
+        if (!allowDuplication && resultName && state.buttons[inputName]) {
+          module.swapButtons(inputName, resultName);
+        } else {
+          module.setButton(inputName, indexes);
+        }
+
+        if (resultName) {
+          callback(resultName);
+        }
+      });
+    },
+
+    cancelListen: () => {
+      listenOptions = null;
     },
 
     connect: (padId?: string) => {
@@ -89,11 +120,23 @@ export default function createModule(params: BaseParams = {}) {
       }
     },
 
+    destroy: () => {
+      module.disconnect();
+      state.pad = mockGamepad;
+      state.prevPad = mockGamepad;
+    },
+    disconnect: () => {
+      connected = false;
+    },
+
     getButtonIndexes: (...inputNames: string[]) => [
       ...new Set(
         inputNames.flatMap((inputName: string) => state.buttons[inputName]),
       ),
     ],
+
+    getPadId: () => gamepadId,
+
     getStickIndexes: (...inputNames: string[]) => [
       ...new Set(
         inputNames
@@ -101,6 +144,79 @@ export default function createModule(params: BaseParams = {}) {
           .map(String),
       ),
     ],
+
+    invertSticks: (inverts: boolean[], ...inputNames: string[]) => {
+      inputNames.forEach((inputName) => {
+        const stick = state.sticks[inputName];
+        if (stick.inverts.length === inverts.length) {
+          stick.inverts = inverts;
+        } else {
+          throw new Error(
+            `On invertSticks(inverts, [..., ${inputName}, ...]): given argument inverts' length does not match '${inputName}' axis' length`,
+          );
+        }
+      });
+    },
+
+    isConnected: () => connected,
+
+    isRumbleSupported: (rawPad?: RawGamepad) => {
+      const padToTest = rawPad || state.pad.rawPad;
+      return padToTest
+        ? !!padToTest.vibrationActuator &&
+            !!padToTest.vibrationActuator.playEffect
+        : null;
+    },
+
+    listenAxis: (
+      callback: (indexes: number[][]) => void,
+      quantity = 2,
+      {
+        allowOffset = true,
+        consecutive = true,
+        waitFor = [100, 'ms'],
+      }: {
+        allowOffset?: boolean;
+        consecutive?: boolean;
+        waitFor?: [number, 'polls' | 'ms'];
+      } = {},
+    ) => {
+      listenOptions = {
+        allowOffset,
+        callback: callback as (indexes: number[] | number[][]) => void,
+        consecutive,
+        currentValue: 0,
+        quantity,
+        targetValue: waitFor[0],
+        type: 'axes',
+        useTimeStamp: waitFor[1] === 'ms',
+      };
+    },
+
+    listenButton: (
+      callback: (indexes: number[]) => void,
+      quantity = 1,
+      {
+        allowOffset = true,
+        consecutive = false,
+        waitFor = [1, 'polls'],
+      }: {
+        allowOffset?: boolean;
+        consecutive?: boolean;
+        waitFor?: [number, 'polls' | 'ms'];
+      } = {},
+    ) => {
+      listenOptions = {
+        allowOffset,
+        callback: callback as (indexes: number[] | number[][]) => void,
+        consecutive,
+        currentValue: 0,
+        quantity,
+        targetValue: waitFor[0],
+        type: 'buttons',
+        useTimeStamp: waitFor[1] === 'ms',
+      };
+    },
 
     setButton: (inputName: string, indexes: number[]) => {
       if (!nameIsValid(inputName)) {
@@ -130,17 +246,53 @@ export default function createModule(params: BaseParams = {}) {
       };
     },
 
-    invertSticks: (inverts: boolean[], ...inputNames: string[]) => {
-      inputNames.forEach((inputName) => {
-        const stick = state.sticks[inputName];
-        if (stick.inverts.length === inverts.length) {
-          stick.inverts = inverts;
+    stickBindOnPress: (
+      inputName: string,
+      callback: (stickName?: string) => void,
+      allowDuplication = false,
+    ) => {
+      if (!nameIsValid(inputName)) {
+        throw new Error(
+          `On stickBindOnPress('${inputName}'): inputName contains invalid characters`,
+        );
+      }
+
+      module.listenAxis((indexesResult: number[][]) => {
+        const resultName = findKey(({ indexes }) => {
+          if (indexes.length !== indexesResult.length) {
+            return false;
+          }
+
+          for (let i = 0; i < indexes.length; i++) {
+            if (indexes[i].length !== indexesResult[i].length) {
+              return false;
+            }
+
+            for (let axis = 0; axis < indexes[i].length; axis++) {
+              if (indexes[i][axis] !== indexesResult[i][axis]) {
+                return false;
+              }
+            }
+          }
+          return true;
+        }, state.sticks);
+
+        if (!allowDuplication && resultName && state.sticks[inputName]) {
+          module.swapSticks(inputName, resultName);
         } else {
-          throw new Error(
-            `On invertSticks(inverts, [..., ${inputName}, ...]): given argument inverts' length does not match '${inputName}' axis' length`,
-          );
+          module.setStick(inputName, indexesResult);
+        }
+
+        if (resultName) {
+          callback(resultName);
         }
       });
+    },
+
+    stopRumble: (channelName?: string) => {
+      if (state.pad.rawPad) {
+        stopRumble(state.pad.rawPad.id, channelName);
+      }
     },
 
     swapButtons: (btn1: string, btn2: string) => {
@@ -195,162 +347,6 @@ export default function createModule(params: BaseParams = {}) {
 
         state.lastUpdate = now;
       }
-    },
-
-    cancelListen: () => {
-      listenOptions = null;
-    },
-
-    listenButton: (
-      callback: (indexes: number[]) => void,
-      quantity = 1,
-      {
-        waitFor = [1, 'polls'],
-        consecutive = false,
-        allowOffset = true,
-      }: {
-        waitFor?: [number, 'polls' | 'ms'];
-        consecutive?: boolean;
-        allowOffset?: boolean;
-      } = {},
-    ) => {
-      listenOptions = {
-        callback: callback as (indexes: number[] | number[][]) => void,
-        quantity,
-        type: 'buttons',
-        currentValue: 0,
-        useTimeStamp: waitFor[1] === 'ms',
-        targetValue: waitFor[0],
-        consecutive,
-        allowOffset,
-      };
-    },
-
-    listenAxis: (
-      callback: (indexes: number[][]) => void,
-      quantity = 2,
-      {
-        waitFor = [100, 'ms'],
-        consecutive = true,
-        allowOffset = true,
-      }: {
-        waitFor?: [number, 'polls' | 'ms'];
-        consecutive?: boolean;
-        allowOffset?: boolean;
-      } = {},
-    ) => {
-      listenOptions = {
-        callback: callback as (indexes: number[] | number[][]) => void,
-        quantity,
-        type: 'axes',
-        currentValue: 0,
-        useTimeStamp: waitFor[1] === 'ms',
-        targetValue: waitFor[0],
-        consecutive,
-        allowOffset,
-      };
-    },
-
-    buttonBindOnPress: (
-      inputName: string,
-      callback: (buttonName?: string) => void,
-      allowDuplication = false,
-    ) => {
-      if (!nameIsValid(inputName)) {
-        throw new Error(
-          `On buttonBindOnPress('${inputName}'): inputName contains invalid characters`,
-        );
-      }
-
-      module.listenButton((indexes: number[]) => {
-        const resultName = findKey(
-          (value) => value[0] === indexes[0],
-          state.buttons,
-        );
-
-        if (!allowDuplication && resultName && state.buttons[inputName]) {
-          module.swapButtons(inputName, resultName);
-        } else {
-          module.setButton(inputName, indexes);
-        }
-
-        if (resultName) {
-          callback(resultName);
-        }
-      });
-    },
-
-    stickBindOnPress: (
-      inputName: string,
-      callback: (stickName?: string) => void,
-      allowDuplication = false,
-    ) => {
-      if (!nameIsValid(inputName)) {
-        throw new Error(
-          `On stickBindOnPress('${inputName}'): inputName contains invalid characters`,
-        );
-      }
-
-      module.listenAxis((indexesResult: number[][]) => {
-        const resultName = findKey(({ indexes }) => {
-          if (indexes.length !== indexesResult.length) {
-            return false;
-          }
-
-          for (let i = 0; i < indexes.length; i++) {
-            if (indexes[i].length !== indexesResult[i].length) {
-              return false;
-            }
-
-            for (let axis = 0; axis < indexes[i].length; axis++) {
-              if (indexes[i][axis] !== indexesResult[i][axis]) {
-                return false;
-              }
-            }
-          }
-          return true;
-        }, state.sticks);
-
-        if (!allowDuplication && resultName && state.sticks[inputName]) {
-          module.swapSticks(inputName, resultName);
-        } else {
-          module.setStick(inputName, indexesResult);
-        }
-
-        if (resultName) {
-          callback(resultName);
-        }
-      });
-    },
-
-    isRumbleSupported: (rawPad?: RawGamepad) => {
-      const padToTest = rawPad || state.pad.rawPad;
-      if (padToTest) {
-        return (
-          !!padToTest.vibrationActuator &&
-          !!padToTest.vibrationActuator.playEffect
-        );
-      } else {
-        return null;
-      }
-    },
-
-    stopRumble: (channelName?: string) => {
-      if (state.pad.rawPad) {
-        stopRumble(state.pad.rawPad.id, channelName);
-      }
-    },
-
-    addRumble: (effect: Effect | Effect[], channelName?: string) => {
-      if (state.pad.rawPad) {
-        addRumble(state.pad.rawPad.id, effect, channelName);
-      }
-    },
-
-    destroy: () => {
-      module.disconnect();
-      state.pad = mockGamepad;
-      state.prevPad = mockGamepad;
     },
   };
 
